@@ -4,371 +4,378 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#05080b">
-<title>AutoPower • Spectrum</title>
+<title>AutoPower • VU Meter</title>
 
 <style>
-  :root{
-    --bg:#05080b;
-    --panel:#091017;
-    --text:#e9fbff;
-    --muted:#7f98a3;
-    --cyan:#00e5ff;
-    --amber:#ffb000;
-    --red:#ff4050;
-  }
+:root{
+  --bg:#05080b;
+  --panel:#091017;
+  --text:#e9fbff;
+  --muted:#7f98a3;
 
-  *{
-    box-sizing:border-box;
-    -webkit-tap-highlight-color:transparent;
-  }
+  --cyan:#00e5ff;
+  --amber:#ffb000;
+  --red:#ff4050;
 
-  html,body{
-    margin:0;
-    min-height:100%;
-    background:var(--bg);
-    color:var(--text);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  }
+  --off:#102028;
+}
 
-  body{
-    min-height:100vh;
-    min-height:100dvh;
-    overflow-x:hidden;
-  }
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
 
+html,body{
+  margin:0;
+  min-height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+}
+
+body{
+  min-height:100vh;
+  min-height:100dvh;
+  overflow-x:hidden;
+}
+
+.page{
+  min-height:100vh;
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  padding:max(12px,env(safe-area-inset-top)) 8px max(14px,env(safe-area-inset-bottom));
+}
+
+.header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 4px 8px;
+}
+
+.title{
+  font-size:17px;
+  font-weight:850;
+  letter-spacing:.12em;
+}
+
+.subtitle{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:10px;
+  letter-spacing:.10em;
+}
+
+.live{
+  padding:5px 8px;
+  border:1px solid rgba(0,229,255,.28);
+  border-radius:999px;
+  color:#738891;
+  font-size:9px;
+  white-space:nowrap;
+}
+
+.live.on{
+  color:var(--cyan);
+}
+
+/* --------------------------------------------------------------------------
+   PANEL DE BARRAS
+   --------------------------------------------------------------------------
+   Cada columna contiene un SVG.
+   Los LED son rectángulos REALES con esquinas redondeadas.
+   Sólo se mueve un clipPath por banda, en lugar de redibujar cientos de DIV.
+   -------------------------------------------------------------------------- */
+
+.meter{
+  flex:1;
+  min-height:390px;
+  display:flex;
+  align-items:stretch;
+  gap:clamp(2px,.7vw,5px);
+  padding:12px 4px 5px;
+  border:1px solid rgba(255,255,255,.065);
+  border-radius:16px;
+  background:#071017;
+  overflow:hidden;
+}
+
+.band{
+  flex:1 1 0;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+.ledSvg{
+  display:block;
+  width:100%;
+  flex:1 1 auto;
+  min-height:310px;
+  overflow:visible;
+}
+
+.freq{
+  flex:0 0 24px;
+  padding-top:6px;
+  text-align:center;
+  color:#8098a2;
+  font-size:clamp(7px,2vw,10px);
+  white-space:nowrap;
+}
+
+.readout{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+  align-items:end;
+  margin:9px 3px 0;
+}
+
+.level{
+  font-size:clamp(24px,7.5vw,44px);
+  font-weight:900;
+  letter-spacing:-.04em;
+  line-height:1;
+}
+
+.meta{
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.5;
+  text-align:right;
+}
+
+.controls{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+  margin-top:10px;
+}
+
+.sensBox{
+  padding:9px 10px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:13px;
+  background:var(--panel);
+}
+
+.sensHead{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:5px;
+  color:var(--muted);
+  font-size:9px;
+  letter-spacing:.06em;
+}
+
+.sensValue{
+  color:var(--cyan);
+  font-weight:800;
+}
+
+input[type="range"]{
+  width:100%;
+  accent-color:var(--cyan);
+}
+
+button{
+  border:0;
+  border-radius:13px;
+  padding:12px 14px;
+  font-weight:800;
+  letter-spacing:.03em;
+  cursor:pointer;
+}
+
+#espBtn{
+  min-height:48px;
+  background:#10232b;
+  color:#d3fbff;
+  border:1px solid rgba(0,229,255,.22);
+}
+
+.legend{
+  margin:8px 3px 0;
+  color:#617985;
+  font-size:8px;
+  text-align:center;
+}
+
+.overlay{
+  position:fixed;
+  inset:0;
+  z-index:20;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:22px;
+  background:rgba(2,5,8,.96);
+}
+
+.overlay.hidden{
+  display:none;
+}
+
+.card{
+  width:min(420px,100%);
+  padding:22px;
+  border:1px solid rgba(0,229,255,.20);
+  background:#081017;
+  border-radius:20px;
+  text-align:center;
+}
+
+.card h1{
+  margin:0 0 8px;
+  font-size:21px;
+}
+
+.card p{
+  margin:0 0 17px;
+  color:#8aa1aa;
+  font-size:12px;
+  line-height:1.45;
+}
+
+#startBtn{
+  width:100%;
+  background:var(--cyan);
+  color:#001318;
+  font-size:13px;
+}
+
+.error{
+  min-height:18px;
+  margin-top:11px;
+  color:#ff7480;
+  font-size:10px;
+  white-space:pre-wrap;
+}
+
+@media (max-width:520px){
   .page{
-    min-height:100vh;
-    min-height:100dvh;
-    display:flex;
-    flex-direction:column;
-    padding:max(14px,env(safe-area-inset-top)) 12px max(16px,env(safe-area-inset-bottom));
-  }
-
-  .header{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap:12px;
-    margin-bottom:10px;
-  }
-
-  .title{
-    font-size:18px;
-    font-weight:800;
-    letter-spacing:.14em;
-  }
-
-  .subtitle{
-    margin-top:4px;
-    color:var(--muted);
-    font-size:11px;
-    letter-spacing:.10em;
-  }
-
-  .live{
-    border:1px solid rgba(0,229,255,.35);
-    border-radius:999px;
-    padding:6px 9px;
-    font-size:10px;
-    color:#7d919a;
-    white-space:nowrap;
-  }
-
-  .live.on{
-    color:var(--cyan);
-    box-shadow:0 0 16px rgba(0,229,255,.15);
+    padding-left:5px;
+    padding-right:5px;
   }
 
   .meter{
-    flex:1;
-    min-height:330px;
-    position:relative;
-    display:flex;
-    align-items:stretch;
-    gap:clamp(3px,1vw,8px);
-    padding:14px 6px 6px;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:18px;
-    background:
-      radial-gradient(circle at 50% 100%,rgba(0,229,255,.06),transparent 45%),
-      linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.005));
-    overflow:hidden;
+    gap:2px;
+    padding-left:3px;
+    padding-right:3px;
+    border-radius:13px;
   }
 
-  .band{
-    flex:1 1 0;
-    min-width:0;
-    position:relative;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-  }
-
-  .track{
-    flex:1;
-    width:100%;
-    min-height:220px;
-    position:relative;
-    overflow:hidden;
-    border-radius:5px;
-    opacity:.96;
-  }
-
-  /* Una sola capa gráfica por barra.
-     El patrón de segmentos se hace por máscara CSS:
-     muchísimo más liviano que 20 DIVs por banda. */
-  .fill{
-    position:absolute;
-    inset:0;
-    transform-origin:50% 100%;
-    transform:scaleY(.001);
-    will-change:transform;
-    background:
-      linear-gradient(
-        to top,
-        var(--cyan) 0%,
-        var(--cyan) 70%,
-        var(--amber) 70%,
-        var(--amber) 88%,
-        var(--red) 88%,
-        var(--red) 100%
-      );
-    -webkit-mask-image:
-      repeating-linear-gradient(
-        to top,
-        #000 0px,
-        #000 8px,
-        transparent 8px,
-        transparent 11px
-      );
-    mask-image:
-      repeating-linear-gradient(
-        to top,
-        #000 0px,
-        #000 8px,
-        transparent 8px,
-        transparent 11px
-      );
-    filter:drop-shadow(0 0 5px rgba(0,229,255,.30));
-  }
-
-  .peak{
-    position:absolute;
-    left:0;
-    right:0;
-    bottom:0%;
-    height:3px;
-    border-radius:4px;
-    background:#dfffff;
-    box-shadow:0 0 8px rgba(210,255,255,.8);
-    opacity:0;
-    will-change:bottom,opacity;
+  .ledSvg{
+    min-height:335px;
   }
 
   .freq{
-    height:26px;
-    padding-top:8px;
-    color:#87a0aa;
-    font-size:clamp(8px,2.2vw,11px);
-    text-align:center;
-    white-space:nowrap;
-  }
-
-  .readout{
-    display:grid;
-    grid-template-columns:1fr auto;
-    align-items:end;
-    gap:10px;
-    margin-top:10px;
-  }
-
-  .db{
-    font-size:clamp(26px,8vw,48px);
-    font-weight:900;
-    letter-spacing:-.04em;
-    line-height:1;
-  }
-
-  .meta{
-    text-align:right;
-    color:var(--muted);
-    font-size:10px;
-    line-height:1.45;
+    font-size:7px;
   }
 
   .controls{
-    margin-top:12px;
-    display:grid;
-    grid-template-columns:1fr auto;
-    gap:10px;
-    align-items:center;
+    grid-template-columns:1fr;
   }
-
-  .sensBox{
-    padding:10px 12px;
-    border:1px solid rgba(255,255,255,.08);
-    background:var(--panel);
-    border-radius:14px;
-  }
-
-  .sensHead{
-    display:flex;
-    justify-content:space-between;
-    gap:10px;
-    margin-bottom:7px;
-    font-size:10px;
-    color:var(--muted);
-    letter-spacing:.06em;
-  }
-
-  .sensValue{
-    color:var(--cyan);
-    font-weight:700;
-  }
-
-  input[type="range"]{
-    width:100%;
-    accent-color:var(--cyan);
-  }
-
-  button{
-    border:0;
-    border-radius:14px;
-    padding:14px 15px;
-    font-weight:800;
-    letter-spacing:.04em;
-    cursor:pointer;
-  }
-
-  #espBtn{
-    background:#10232b;
-    color:#c9faff;
-    border:1px solid rgba(0,229,255,.22);
-    height:100%;
-  }
-
-  .startOverlay{
-    position:fixed;
-    inset:0;
-    z-index:20;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:24px;
-    background:rgba(2,5,8,.94);
-    backdrop-filter:blur(7px);
-  }
-
-  .startOverlay.hidden{
-    display:none;
-  }
-
-  .card{
-    width:min(420px,100%);
-    padding:24px;
-    border:1px solid rgba(0,229,255,.22);
-    background:#081017;
-    border-radius:22px;
-    box-shadow:0 22px 80px rgba(0,0,0,.5);
-    text-align:center;
-  }
-
-  .card h1{
-    margin:0 0 8px;
-    font-size:22px;
-  }
-
-  .card p{
-    margin:0 0 18px;
-    color:#8aa1aa;
-    font-size:13px;
-    line-height:1.45;
-  }
-
-  #startBtn{
-    width:100%;
-    background:var(--cyan);
-    color:#001318;
-    font-size:14px;
-  }
-
-  .error{
-    min-height:18px;
-    margin-top:12px;
-    color:#ff7480;
-    font-size:11px;
-    white-space:pre-wrap;
-  }
-
-  @media (max-width:520px){
-    .page{ padding-left:8px; padding-right:8px; }
-    .meter{ gap:2px; padding-left:4px; padding-right:4px; border-radius:14px; }
-    .freq{ font-size:8px; }
-    .controls{ grid-template-columns:1fr; }
-    #espBtn{ min-height:48px; }
-  }
+}
 </style>
 </head>
 
 <body>
+
 <div class="page">
+
   <div class="header">
     <div>
       <div class="title">LEVEL ANALYZER</div>
-      <div class="subtitle">MICROPHONE • REAL-TIME FFT</div>
+      <div class="subtitle">MICROPHONE • FAST FFT</div>
     </div>
+
     <div id="live" class="live">MIC • OFF</div>
   </div>
 
   <div id="meter" class="meter"></div>
 
   <div class="readout">
-    <div id="db" class="db">— dBFS</div>
+    <div id="levelText" class="level">— dBFS</div>
+
     <div class="meta">
       <div id="peakText">PEAK: —</div>
-      <div id="sourceText">SOURCE: MIC</div>
       <div id="fpsText">ANALYZER: READY</div>
+      <div id="audioText">AUDIO: —</div>
     </div>
   </div>
 
   <div class="controls">
+
     <div class="sensBox">
       <div class="sensHead">
         <span>SENSIBILIDAD VISUAL</span>
-        <span id="sensValue" class="sensValue">+24 dB</span>
+        <span id="sensValue" class="sensValue">+30 dB</span>
       </div>
-      <input id="sens" type="range" min="0" max="42" step="1" value="24">
+
+      <input id="sens" type="range" min="0" max="48" step="1" value="30">
     </div>
 
     <button id="espBtn" type="button">CONTROL ESP</button>
+
   </div>
+
+  <div class="legend">
+    UMBRALES FIJOS: CYAN &lt; −24 dBFS • AMBAR ≥ −24 dBFS • ROJO ≥ −12 dBFS
+  </div>
+
 </div>
 
-<div id="overlay" class="startOverlay">
+
+<div id="overlay" class="overlay">
   <div class="card">
-    <h1>AutoPower Spectrum</h1>
+    <h1>AutoPower VU Meter</h1>
+
     <p>
-      Esta versión está optimizada para celular:
-      menos carga de CPU, barras por GPU y sensibilidad ajustable.
+      Versión de baja latencia para celular.
+      Usa el micrófono local; el ESP8266 no procesa la gráfica.
     </p>
+
     <button id="startBtn" type="button">ACTIVAR MICRÓFONO</button>
+
     <div id="error" class="error"></div>
   </div>
 </div>
 
+
 <script>
 // ============================================================================
-// AUTPOWER MIC SPECTRUM v3 MOBILE
-// ----------------------------------------------------------------------------
-// OBJETIVO:
-// - Mantener el aspecto de analizador segmentado.
-// - Reducir drásticamente la carga gráfica en celulares.
-// - Mejorar la sensibilidad sin agregar trabajo al ESP8266.
-// - Permitir ajustar la sensibilidad desde el propio teléfono.
+// AUTPOWER VU METER v4 - LOW LATENCY
+// ============================================================================
 //
-// CAMBIO CLAVE:
-// La versión anterior dibujaba cientos de elementos DOM por cuadro.
-// Esta versión usa UNA capa gráfica por barra y una marca de pico.
+// CAMBIOS IMPORTANTES:
+//
+// 1) FFT = 2048 puntos.
+//    A 48 kHz equivale a ~42,7 ms de ventana, contra ~85 ms de 4096.
+//    Esto reduce mucho la sensación de "medio segundo atrás".
+//
+// 2) AudioContext con latencyHint = "interactive".
+//
+// 3) smoothingTimeConstant = 0.
+//    No agregamos retardo artificial dentro del AnalyserNode.
+//
+// 4) Se analiza en cada requestAnimationFrame.
+//    En un teléfono de 60 Hz apunta a ~60 actualizaciones/s.
+//
+// 5) Cada banda es un SVG con LED rectangulares redondeados.
+//    No se actualizan individualmente: un clipPath revela los LED activos.
+//
+// 6) COLORES POR UMBRALES ABSOLUTOS.
+//    Todas las frecuencias usan EXACTAMENTE los mismos umbrales:
+//       CYAN  : < -24 dBFS visual
+//       AMBAR : >= -24 dBFS visual
+//       ROJO  : >= -12 dBFS visual
+//
 // ============================================================================
 
 
@@ -376,176 +383,149 @@
 // CONFIGURACIÓN
 // ---------------------------------------------------------------------------
 
-// Dirección del panel de control del ESP8266.
 const CONTROL_URL = 'http://192.168.1.13/control';
 
-// Frecuencias centrales del analizador.
 const BANDS = [
   40, 63, 100, 160, 250, 400, 630,
   1000, 1600, 2500, 4000, 6300, 10000, 16000
 ];
 
-// 4096 es un buen compromiso para teléfono:
-// a 48 kHz da ~11,7 Hz/bin y sigue representando bien los graves.
-const FFT_SIZE = 4096;
+// Menor FFT = menor latencia temporal.
+const FFT_SIZE = 2048;
 
-// No necesitamos calcular FFT 60 veces/s.
-// 30 FPS se ve fluido y reduce muchísimo CPU/batería.
-const ANALYSIS_INTERVAL_MS = 33;
+// Número de LED por barra.
+const LED_COUNT = 18;
 
-// Piso/techo visuales.
-// La sensibilidad adicional la controla el deslizador.
-const VISUAL_FLOOR_DB = -86;
-const VISUAL_CEILING_DB = -24;
+// Escala visual común a TODAS las frecuencias.
+const SCALE_MIN_DB = -72;
+const SCALE_MAX_DB = 0;
 
-// Compensación visual aproximada de los extremos.
-// No es calibración acústica; sólo equilibra la presentación.
-const BAND_COMP_DB = [
-  12, 9, 6, 3, 1, 0, 0,
-   0, 0, 1, 2, 4, 7, 10
-];
+// Umbrales de color ABSOLUTOS y comunes a TODAS las bandas.
+const AMBER_THRESHOLD_DB = -24;
+const RED_THRESHOLD_DB = -12;
 
-// Ataque y caída de las barras.
-const ATTACK = 0.82;
-const RELEASE = 0.23;
+// Ataque prácticamente instantáneo.
+const ATTACK = 1.0;
 
-// Caída del peak hold.
-const PEAK_RELEASE_PER_FRAME = 0.012;
+// Caída suficientemente rápida para evitar sensación pesada.
+const RELEASE = 0.48;
+
+// Peak hold corto.
+const PEAK_HOLD_MS = 110;
+const PEAK_FALL_PER_FRAME = 0.055;
 
 
 // ---------------------------------------------------------------------------
-// REFERENCIAS HTML
+// HTML
 // ---------------------------------------------------------------------------
 
 const meter = document.getElementById('meter');
+
 const overlay = document.getElementById('overlay');
+
 const startBtn = document.getElementById('startBtn');
+
 const errorBox = document.getElementById('error');
+
 const live = document.getElementById('live');
 
-const dbText = document.getElementById('db');
+const levelText = document.getElementById('levelText');
+
 const peakText = document.getElementById('peakText');
-const sourceText = document.getElementById('sourceText');
+
 const fpsText = document.getElementById('fpsText');
 
+const audioText = document.getElementById('audioText');
+
 const sens = document.getElementById('sens');
+
 const sensValue = document.getElementById('sensValue');
+
 const espBtn = document.getElementById('espBtn');
 
 
 // ---------------------------------------------------------------------------
-// BARRAS: 14 fills + 14 peak markers.
+// ESTADO DE AUDIO
 // ---------------------------------------------------------------------------
 
-const fills = [];
-const peakEls = [];
+let audioContext = null;
 
-const shown = new Float32Array(BANDS.length);
-const peakShown = new Float32Array(BANDS.length);
-
-function formatFreq(hz)
-{
-  if (hz >= 1000)
-  {
-    const k = hz / 1000;
-    return Number.isInteger(k) ? `${k}k` : `${k.toFixed(1)}k`;
-  }
-
-  return String(hz);
-}
-
-for (let i = 0; i < BANDS.length; i++)
-{
-  const band = document.createElement('div');
-  band.className = 'band';
-
-  const track = document.createElement('div');
-  track.className = 'track';
-
-  const fill = document.createElement('div');
-  fill.className = 'fill';
-
-  const peak = document.createElement('div');
-  peak.className = 'peak';
-
-  const label = document.createElement('div');
-  label.className = 'freq';
-  label.textContent = formatFreq(BANDS[i]);
-
-  track.appendChild(fill);
-  track.appendChild(peak);
-
-  band.appendChild(track);
-  band.appendChild(label);
-
-  meter.appendChild(band);
-
-  fills.push(fill);
-  peakEls.push(peak);
-}
-
-
-// ---------------------------------------------------------------------------
-// WEB AUDIO
-// ---------------------------------------------------------------------------
-
-let ctx = null;
 let analyser = null;
-let freqData = null;
-let timeData = null;
+
+let freqBytes = null;
 
 let sampleRate = 48000;
 
-// Rango de bins de cada banda.
-// Se calcula UNA sola vez al arrancar.
 let bandRanges = [];
 
-let lastAnalysisAt = 0;
-let lastFpsAt = performance.now();
-let frameCounter = 0;
-let measuredFps = 0;
+let shown = new Float32Array(BANDS.length);
 
-let globalPeakDb = -90;
+let peakShown = new Float32Array(BANDS.length);
+
+let peakHoldUntil = new Float64Array(BANDS.length);
+
+let clipRects = [];
+
+let peakRects = [];
+
+let globalPeakDb = -100;
+
+let frames = 0;
+
+let fpsStartedAt = performance.now();
 
 
 // ---------------------------------------------------------------------------
 // SENSIBILIDAD
 // ---------------------------------------------------------------------------
 
-// Recuperamos la sensibilidad elegida anteriormente.
-const savedSensitivity = localStorage.getItem('autopowerSensitivity');
+const savedSensitivity =
+  localStorage.getItem('autopowerVuSensitivity');
 
 if (savedSensitivity !== null)
 {
-  const value = Number(savedSensitivity);
+  const n = Number(savedSensitivity);
 
-  if (Number.isFinite(value))
+  if (Number.isFinite(n))
   {
-    sens.value = String(Math.max(0, Math.min(42, value)));
+    sens.value =
+      String(
+        Math.max(
+          0,
+          Math.min(
+            48,
+            n
+          )
+        )
+      );
   }
 }
 
-function currentGainDb()
+function gainDb()
 {
   return Number(sens.value);
 }
 
-function refreshSensitivityLabel()
+function refreshSensitivity()
 {
-  sensValue.textContent = `+${currentGainDb()} dB`;
+  sensValue.textContent =
+    `+${gainDb()} dB`;
 }
 
-refreshSensitivityLabel();
+refreshSensitivity();
 
-sens.addEventListener('input', () =>
-{
-  refreshSensitivityLabel();
+sens.addEventListener(
+  'input',
+  () =>
+  {
+    refreshSensitivity();
 
-  localStorage.setItem(
-    'autopowerSensitivity',
-    String(currentGainDb())
-  );
-});
+    localStorage.setItem(
+      'autopowerVuSensitivity',
+      String(gainDb())
+    );
+  }
+);
 
 
 // ---------------------------------------------------------------------------
@@ -554,14 +534,34 @@ sens.addEventListener('input', () =>
 
 function clamp(v, lo, hi)
 {
-  return Math.max(lo, Math.min(hi, v));
+  return Math.max(
+    lo,
+    Math.min(
+      hi,
+      v
+    )
+  );
+}
+
+function freqLabel(hz)
+{
+  if (hz >= 1000)
+  {
+    const k = hz / 1000;
+
+    return Number.isInteger(k)
+      ? `${k}k`
+      : `${k.toFixed(1)}k`;
+  }
+
+  return String(hz);
 }
 
 function dbToNorm(db)
 {
   return clamp(
-    (db - VISUAL_FLOOR_DB) /
-    (VISUAL_CEILING_DB - VISUAL_FLOOR_DB),
+    (db - SCALE_MIN_DB) /
+    (SCALE_MAX_DB - SCALE_MIN_DB),
     0,
     1
   );
@@ -569,33 +569,347 @@ function dbToNorm(db)
 
 
 // ---------------------------------------------------------------------------
-// PRECALCULAR LOS BINS DE CADA BANDA
+// CREAR BARRAS SVG
+// ---------------------------------------------------------------------------
+//
+// ViewBox:
+//   ancho  = 30
+//   alto   = 180
+//
+// Cada LED:
+//   ancho  = 28
+//   alto   = 6
+//
+// Por lo tanto la base horizontal es MUCHO mayor que la altura.
+// Las esquinas se redondean con rx/ry.
+// ---------------------------------------------------------------------------
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+for (let b = 0; b < BANDS.length; b++)
+{
+  const band = document.createElement('div');
+
+  band.className = 'band';
+
+
+  const svg =
+    document.createElementNS(
+      SVG_NS,
+      'svg'
+    );
+
+  svg.setAttribute(
+    'class',
+    'ledSvg'
+  );
+
+  svg.setAttribute(
+    'viewBox',
+    '0 0 30 180'
+  );
+
+  svg.setAttribute(
+    'preserveAspectRatio',
+    'none'
+  );
+
+
+  // DEFINICIONES
+  const defs =
+    document.createElementNS(
+      SVG_NS,
+      'defs'
+    );
+
+
+  const clip =
+    document.createElementNS(
+      SVG_NS,
+      'clipPath'
+    );
+
+  const clipId =
+    `clipBand${b}`;
+
+  clip.setAttribute(
+    'id',
+    clipId
+  );
+
+
+  const clipRect =
+    document.createElementNS(
+      SVG_NS,
+      'rect'
+    );
+
+  clipRect.setAttribute(
+    'x',
+    '0'
+  );
+
+  clipRect.setAttribute(
+    'y',
+    '180'
+  );
+
+  clipRect.setAttribute(
+    'width',
+    '30'
+  );
+
+  clipRect.setAttribute(
+    'height',
+    '0'
+  );
+
+  clip.appendChild(
+    clipRect
+  );
+
+  defs.appendChild(
+    clip
+  );
+
+  svg.appendChild(
+    defs
+  );
+
+
+  // GRUPO DE LED APAGADOS
+  const offGroup =
+    document.createElementNS(
+      SVG_NS,
+      'g'
+    );
+
+
+  // GRUPO DE LED ENCENDIDOS
+  const onGroup =
+    document.createElementNS(
+      SVG_NS,
+      'g'
+    );
+
+  onGroup.setAttribute(
+    'clip-path',
+    `url(#${clipId})`
+  );
+
+
+  // Geometría vertical.
+  const ledHeight = 6;
+
+  const ledGap = 4;
+
+  const totalLedHeight =
+    LED_COUNT * ledHeight +
+    (LED_COUNT - 1) * ledGap;
+
+  const bottomMargin =
+    (180 - totalLedHeight) / 2;
+
+
+  for (let s = 0; s < LED_COUNT; s++)
+  {
+    // s=0 es el LED inferior.
+    const y =
+      180 -
+      bottomMargin -
+      ledHeight -
+      s * (ledHeight + ledGap);
+
+
+    // Nivel dB que representa ESTE LED.
+    const segmentDb =
+      SCALE_MIN_DB +
+      ((s + 1) / LED_COUNT) *
+      (SCALE_MAX_DB - SCALE_MIN_DB);
+
+
+    // Color fijo por umbral ABSOLUTO.
+    let onColor = '#00e5ff';
+
+    if (segmentDb >= RED_THRESHOLD_DB)
+    {
+      onColor = '#ff4050';
+    }
+    else if (segmentDb >= AMBER_THRESHOLD_DB)
+    {
+      onColor = '#ffb000';
+    }
+
+
+    // LED apagado.
+    const offRect =
+      document.createElementNS(
+        SVG_NS,
+        'rect'
+      );
+
+    offRect.setAttribute('x', '1');
+    offRect.setAttribute('y', String(y));
+    offRect.setAttribute('width', '28');
+    offRect.setAttribute('height', String(ledHeight));
+    offRect.setAttribute('rx', '2.2');
+    offRect.setAttribute('ry', '2.2');
+    offRect.setAttribute('fill', '#102028');
+
+    offGroup.appendChild(
+      offRect
+    );
+
+
+    // LED encendido.
+    const onRect =
+      document.createElementNS(
+        SVG_NS,
+        'rect'
+      );
+
+    onRect.setAttribute('x', '1');
+    onRect.setAttribute('y', String(y));
+    onRect.setAttribute('width', '28');
+    onRect.setAttribute('height', String(ledHeight));
+    onRect.setAttribute('rx', '2.2');
+    onRect.setAttribute('ry', '2.2');
+    onRect.setAttribute('fill', onColor);
+
+    onGroup.appendChild(
+      onRect
+    );
+  }
+
+
+  svg.appendChild(
+    offGroup
+  );
+
+  svg.appendChild(
+    onGroup
+  );
+
+
+  // PEAK HOLD
+  const peakRect =
+    document.createElementNS(
+      SVG_NS,
+      'rect'
+    );
+
+  peakRect.setAttribute('x', '1');
+  peakRect.setAttribute('y', '176');
+  peakRect.setAttribute('width', '28');
+  peakRect.setAttribute('height', '3');
+  peakRect.setAttribute('rx', '1.5');
+  peakRect.setAttribute('fill', '#e8ffff');
+  peakRect.setAttribute('opacity', '0');
+
+  svg.appendChild(
+    peakRect
+  );
+
+
+  const label =
+    document.createElement(
+      'div'
+    );
+
+  label.className =
+    'freq';
+
+  label.textContent =
+    freqLabel(
+      BANDS[b]
+    );
+
+
+  band.appendChild(
+    svg
+  );
+
+  band.appendChild(
+    label
+  );
+
+  meter.appendChild(
+    band
+  );
+
+
+  clipRects.push(
+    clipRect
+  );
+
+  peakRects.push(
+    peakRect
+  );
+}
+
+
+// ---------------------------------------------------------------------------
+// PRECALCULAR RANGO FFT DE CADA FRECUENCIA
 // ---------------------------------------------------------------------------
 
 function buildBandRanges()
 {
-  const binHz = sampleRate / FFT_SIZE;
+  const binHz =
+    sampleRate /
+    FFT_SIZE;
 
-  bandRanges = BANDS.map((center, i) =>
-  {
-    const low =
-      i === 0
-        ? center / Math.sqrt(BANDS[1] / center)
-        : Math.sqrt(BANDS[i - 1] * center);
 
-    const high =
-      i === BANDS.length - 1
-        ? center * Math.sqrt(center / BANDS[i - 1])
-        : Math.sqrt(center * BANDS[i + 1]);
+  bandRanges =
+    BANDS.map(
+      (center, i) =>
+      {
+        const low =
+          i === 0
+            ? center /
+              Math.sqrt(
+                BANDS[1] /
+                center
+              )
+            : Math.sqrt(
+                BANDS[i - 1] *
+                center
+              );
 
-    return {
-      from: Math.max(1, Math.floor(low / binHz)),
-      to: Math.min(
-        FFT_SIZE / 2 - 1,
-        Math.ceil(high / binHz)
-      )
-    };
-  });
+
+        const high =
+          i === BANDS.length - 1
+            ? center *
+              Math.sqrt(
+                center /
+                BANDS[i - 1]
+              )
+            : Math.sqrt(
+                center *
+                BANDS[i + 1]
+              );
+
+
+        return {
+          from:
+            Math.max(
+              1,
+              Math.floor(
+                low /
+                binHz
+              )
+            ),
+
+          to:
+            Math.min(
+              analyser.frequencyBinCount - 1,
+              Math.ceil(
+                high /
+                binHz
+              )
+            )
+        };
+      }
+    );
 }
 
 
@@ -607,6 +921,7 @@ async function startMic()
 {
   errorBox.textContent = '';
 
+
   if (
     !window.isSecureContext ||
     !navigator.mediaDevices ||
@@ -614,222 +929,412 @@ async function startMic()
   )
   {
     errorBox.textContent =
-      'El navegador no habilita el micrófono en este contexto. ' +
-      'Abrí la página HTTPS de GitHub Pages.';
+      'Abrí esta página desde HTTPS para habilitar el micrófono.';
+
     return;
   }
 
+
   try
   {
-    const stream = await navigator.mediaDevices.getUserMedia(
-    {
-      audio:
+    const stream =
+      await navigator.mediaDevices.getUserMedia(
       {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false
-      },
-      video: false
-    });
+        audio:
+        {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 1
+        },
 
-    ctx = new (window.AudioContext || window.webkitAudioContext)();
+        video: false
+      });
 
-    await ctx.resume();
 
-    sampleRate = ctx.sampleRate;
+    // latencyHint "interactive" solicita al navegador la menor latencia
+    // razonablemente disponible para audio interactivo.
+    audioContext =
+      new (
+        window.AudioContext ||
+        window.webkitAudioContext
+      )(
+        {
+          latencyHint: 'interactive'
+        }
+      );
 
-    const source = ctx.createMediaStreamSource(stream);
 
-    analyser = ctx.createAnalyser();
+    await audioContext.resume();
 
-    analyser.fftSize = FFT_SIZE;
 
-    // Rango dinámico amplio para no perder señales débiles.
-    analyser.minDecibels = -110;
-    analyser.maxDecibels = -5;
+    sampleRate =
+      audioContext.sampleRate;
 
-    // Smoothing bajo: queremos respuesta rápida.
-    analyser.smoothingTimeConstant = 0.10;
 
-    source.connect(analyser);
+    const source =
+      audioContext.createMediaStreamSource(
+        stream
+      );
 
-    freqData = new Float32Array(analyser.frequencyBinCount);
 
-    // Para RMS no hace falta usar miles de muestras.
-    // Este buffer es reutilizado por el navegador.
-    timeData = new Float32Array(FFT_SIZE);
+    analyser =
+      audioContext.createAnalyser();
+
+
+    analyser.fftSize =
+      FFT_SIZE;
+
+
+    // Sin smoothing interno.
+    analyser.smoothingTimeConstant =
+      0;
+
+
+    // Rango que se transforma luego a Byte 0..255.
+    analyser.minDecibels =
+      -100;
+
+    analyser.maxDecibels =
+      -4;
+
+
+    source.connect(
+      analyser
+    );
+
+
+    freqBytes =
+      new Uint8Array(
+        analyser.frequencyBinCount
+      );
+
 
     buildBandRanges();
 
-    overlay.classList.add('hidden');
 
-    live.textContent = 'MIC • LIVE';
-    live.classList.add('on');
+    overlay.classList.add(
+      'hidden'
+    );
 
-    sourceText.textContent =
-      `SOURCE: MIC • ${Math.round(sampleRate / 1000)} kHz`;
 
-    requestAnimationFrame(render);
+    live.textContent =
+      'MIC • LIVE';
+
+    live.classList.add(
+      'on'
+    );
+
+
+    audioText.textContent =
+      `AUDIO: ${Math.round(sampleRate / 1000)} kHz`;
+
+
+    requestAnimationFrame(
+      render
+    );
   }
   catch (err)
   {
     errorBox.textContent =
       'No se pudo abrir el micrófono:\n' +
-      (err?.message || String(err));
+      (
+        err?.message ||
+        String(err)
+      );
   }
 }
 
 
 // ---------------------------------------------------------------------------
-// ANÁLISIS
+// ANALIZAR UNA TRAMA
 // ---------------------------------------------------------------------------
 
-function analyze()
+function analyze(now)
 {
-  analyser.getFloatFrequencyData(freqData);
+  analyser.getByteFrequencyData(
+    freqBytes
+  );
 
-  analyser.getFloatTimeDomainData(timeData);
 
-  // RMS y pico general.
-  let sumSq = 0;
-  let absPeak = 0;
+  const minDb =
+    analyser.minDecibels;
 
-  // Muestreamos 1 de cada 4 valores temporales.
-  // Para el indicador general es más que suficiente y ahorra CPU.
-  for (let i = 0; i < timeData.length; i += 4)
-  {
-    const v = timeData[i];
+  const dbSpan =
+    analyser.maxDecibels -
+    analyser.minDecibels;
 
-    sumSq += v * v;
 
-    const a = Math.abs(v);
+  let strongestDb =
+    -100;
 
-    if (a > absPeak)
-    {
-      absPeak = a;
-    }
-  }
 
-  const usedSamples = Math.ceil(timeData.length / 4);
-
-  const rms = Math.sqrt(sumSq / usedSamples);
-
-  const rmsDb =
-    rms > 0
-      ? Math.max(-100, 20 * Math.log10(rms))
-      : -100;
-
-  const instantPeakDb =
-    absPeak > 0
-      ? Math.max(-100, 20 * Math.log10(absPeak))
-      : -100;
-
-  if (instantPeakDb > globalPeakDb)
-  {
-    globalPeakDb = instantPeakDb;
-  }
-  else
-  {
-    globalPeakDb = Math.max(-100, globalPeakDb - 0.20);
-  }
-
-  const userGain = currentGainDb();
-
-  // Cada banda recorre únicamente SUS bins precalculados.
   for (let b = 0; b < BANDS.length; b++)
   {
-    const range = bandRanges[b];
+    const range =
+      bandRanges[b];
 
-    let maxDb = -110;
 
-    // Nos quedamos con el pico espectral de la banda.
-    // Es ágil, sensible y mucho más barato que recalcular potencia promedio.
-    for (let i = range.from; i <= range.to; i++)
+    let peakByte = 0;
+
+
+    // Buscamos el bin más alto de cada banda.
+    for (
+      let i = range.from;
+      i <= range.to;
+      i++
+    )
     {
-      const db = freqData[i];
+      const value =
+        freqBytes[i];
 
-      if (Number.isFinite(db) && db > maxDb)
+
+      if (
+        value >
+        peakByte
+      )
       {
-        maxDb = db;
+        peakByte =
+          value;
       }
     }
 
-    const visualDb =
-      maxDb +
-      userGain +
-      BAND_COMP_DB[b];
 
-    const target = dbToNorm(visualDb);
+    // Convertimos 0..255 al dB correspondiente.
+    const rawDb =
+      minDb +
+      (
+        peakByte /
+        255
+      ) *
+      dbSpan;
 
+
+    if (
+      rawDb >
+      strongestDb
+    )
+    {
+      strongestDb =
+        rawDb;
+    }
+
+
+    // La sensibilidad es una ganancia VISUAL global.
+    // Es idéntica para todas las frecuencias.
+    const displayDb =
+      rawDb +
+      gainDb();
+
+
+    const target =
+      dbToNorm(
+        displayDb
+      );
+
+
+    // Ataque instantáneo; caída rápida.
     const k =
-      target > shown[b]
+      target >
+      shown[b]
         ? ATTACK
         : RELEASE;
 
-    shown[b] += (target - shown[b]) * k;
 
-    if (shown[b] > peakShown[b])
+    shown[b] +=
+      (
+        target -
+        shown[b]
+      ) *
+      k;
+
+
+    // Quantizamos al número de LED completos.
+    const ledCount =
+      Math.round(
+        shown[b] *
+        LED_COUNT
+      );
+
+
+    const litNorm =
+      ledCount /
+      LED_COUNT;
+
+
+    // Clip desde abajo.
+    const clipHeight =
+      180 *
+      litNorm;
+
+
+    clipRects[b].setAttribute(
+      'y',
+      String(
+        180 -
+        clipHeight
+      )
+    );
+
+
+    clipRects[b].setAttribute(
+      'height',
+      String(
+        clipHeight
+      )
+    );
+
+
+    // Peak hold.
+    if (
+      shown[b] >=
+      peakShown[b]
+    )
     {
-      peakShown[b] = shown[b];
+      peakShown[b] =
+        shown[b];
+
+      peakHoldUntil[b] =
+        now +
+        PEAK_HOLD_MS;
+    }
+    else if (
+      now >
+      peakHoldUntil[b]
+    )
+    {
+      peakShown[b] =
+        Math.max(
+          shown[b],
+          peakShown[b] -
+          PEAK_FALL_PER_FRAME
+        );
+    }
+
+
+    if (
+      peakShown[b] >
+      0.02
+    )
+    {
+      const peakY =
+        176 -
+        peakShown[b] *
+        170;
+
+
+      peakRects[b].setAttribute(
+        'y',
+        String(
+          clamp(
+            peakY,
+            3,
+            176
+          )
+        )
+      );
+
+
+      peakRects[b].setAttribute(
+        'opacity',
+        '1'
+      );
     }
     else
     {
-      peakShown[b] = Math.max(
-        0,
-        peakShown[b] - PEAK_RELEASE_PER_FRAME
+      peakRects[b].setAttribute(
+        'opacity',
+        '0'
       );
     }
-
-    // TRANSFORM lo procesa muy eficientemente el navegador/GPU.
-    fills[b].style.transform =
-      `scaleY(${Math.max(.001, shown[b]).toFixed(3)})`;
-
-    peakEls[b].style.bottom =
-      `${(peakShown[b] * 100).toFixed(1)}%`;
-
-    peakEls[b].style.opacity =
-      peakShown[b] > 0.025 ? '1' : '0';
   }
 
-  dbText.textContent = `${rmsDb.toFixed(1)} dBFS`;
 
-  peakText.textContent = `PEAK: ${globalPeakDb.toFixed(1)} dBFS`;
+  // Indicador general SIN añadir otra lectura temporal.
+  const visualStrongest =
+    strongestDb +
+    gainDb();
+
+
+  if (
+    visualStrongest >
+    globalPeakDb
+  )
+  {
+    globalPeakDb =
+      visualStrongest;
+  }
+  else
+  {
+    globalPeakDb =
+      Math.max(
+        -100,
+        globalPeakDb -
+        0.8
+      );
+  }
+
+
+  levelText.textContent =
+    `${visualStrongest.toFixed(1)} dBFS`;
+
+
+  peakText.textContent =
+    `PEAK: ${globalPeakDb.toFixed(1)} dBFS`;
 }
 
 
 // ---------------------------------------------------------------------------
-// LOOP VISUAL
+// LOOP DE BAJA LATENCIA
 // ---------------------------------------------------------------------------
 
 function render(now)
 {
-  // requestAnimationFrame mantiene sincronía con la pantalla,
-  // pero sólo hacemos la FFT aproximadamente cada 33 ms.
-  if (now - lastAnalysisAt >= ANALYSIS_INTERVAL_MS)
+  if (
+    analyser
+  )
   {
-    lastAnalysisAt = now;
-
-    analyze();
+    // Analizamos cada refresco de pantalla.
+    analyze(now);
   }
 
-  frameCounter++;
 
-  if (now - lastFpsAt >= 1000)
+  frames++;
+
+
+  if (
+    now -
+    fpsStartedAt >=
+    1000
+  )
   {
-    measuredFps =
+    const fps =
       Math.round(
-        frameCounter * 1000 /
-        (now - lastFpsAt)
+        frames *
+        1000 /
+        (
+          now -
+          fpsStartedAt
+        )
       );
 
-    fpsText.textContent =
-      `DISPLAY: ${measuredFps} FPS • FFT: ~30/s`;
 
-    frameCounter = 0;
-    lastFpsAt = now;
+    fpsText.textContent =
+      `DISPLAY/FFT: ${fps} FPS`;
+
+
+    frames =
+      0;
+
+
+    fpsStartedAt =
+      now;
   }
 
-  requestAnimationFrame(render);
+
+  requestAnimationFrame(
+    render
+  );
 }
 
 
@@ -837,12 +1342,21 @@ function render(now)
 // EVENTOS
 // ---------------------------------------------------------------------------
 
-startBtn.addEventListener('click', startMic);
+startBtn.addEventListener(
+  'click',
+  startMic
+);
 
-espBtn.addEventListener('click', () =>
-{
-  window.location.href = CONTROL_URL;
-});
+
+espBtn.addEventListener(
+  'click',
+  () =>
+  {
+    window.location.href =
+      CONTROL_URL;
+  }
+);
 </script>
+
 </body>
 </html>
