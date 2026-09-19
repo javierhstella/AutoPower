@@ -350,7 +350,7 @@ button{
 
 <script>
 // ============================================================================
-// AUTPOWER VU METER v4 - LOW LATENCY
+// AUTOPOWER VU METER v4.1 - LED GRANDES
 // ============================================================================
 //
 // CAMBIOS IMPORTANTES:
@@ -394,7 +394,21 @@ const BANDS = [
 const FFT_SIZE = 2048;
 
 // Número de LED por barra.
-const LED_COUNT = 18;
+// Reducimos la cantidad para duplicar la altura de cada LED sin
+// agrandar la pantalla ni perder las 14 bandas de frecuencia.
+const LED_COUNT = 12;
+
+// Dimensiones en coordenadas SVG; cada LED mide ahora 28 x 12.
+const LED_HEIGHT = 12;
+const LED_GAP = 3;
+const LED_VIEW_HEIGHT = 180;
+
+// El marcador blanco de pico mide la MITAD de un LED normal.
+const PEAK_LED_HEIGHT = LED_HEIGHT / 2;
+
+// El conjunto queda centrado verticalmente en el SVG.
+const LED_MARGIN =
+  (LED_VIEW_HEIGHT - LED_COUNT * LED_HEIGHT - (LED_COUNT - 1) * LED_GAP) / 2;
 
 // Escala visual común a TODAS las frecuencias.
 const SCALE_MIN_DB = -72;
@@ -407,12 +421,12 @@ const RED_THRESHOLD_DB = -12;
 // Ataque prácticamente instantáneo.
 const ATTACK = 1.0;
 
-// Caída suficientemente rápida para evitar sensación pesada.
-const RELEASE = 0.48;
+// Descenso apenas mas pausado; el ataque permanece instantaneo.
+const RELEASE = 0.38;
 
 // Peak hold corto.
 const PEAK_HOLD_MS = 110;
-const PEAK_FALL_PER_FRAME = 0.055;
+const PEAK_FALL_PER_FRAME = 0.045;
 
 
 // ---------------------------------------------------------------------------
@@ -578,7 +592,7 @@ function dbToNorm(db)
 //
 // Cada LED:
 //   ancho  = 28
-//   alto   = 6
+//   alto   = 12 (el doble respecto de v4)
 //
 // Por lo tanto la base horizontal es MUCHO mayor que la altura.
 // Las esquinas se redondean con rx/ry.
@@ -699,26 +713,17 @@ for (let b = 0; b < BANDS.length; b++)
 
 
   // Geometría vertical.
-  const ledHeight = 6;
-
-  const ledGap = 4;
-
-  const totalLedHeight =
-    LED_COUNT * ledHeight +
-    (LED_COUNT - 1) * ledGap;
-
-  const bottomMargin =
-    (180 - totalLedHeight) / 2;
+  // LED_HEIGHT, LED_GAP y LED_MARGIN ya estan definidos arriba.
 
 
   for (let s = 0; s < LED_COUNT; s++)
   {
     // s=0 es el LED inferior.
     const y =
-      180 -
-      bottomMargin -
-      ledHeight -
-      s * (ledHeight + ledGap);
+      LED_VIEW_HEIGHT -
+      LED_MARGIN -
+      LED_HEIGHT -
+      s * (LED_HEIGHT + LED_GAP);
 
 
     // Nivel dB que representa ESTE LED.
@@ -751,9 +756,9 @@ for (let b = 0; b < BANDS.length; b++)
     offRect.setAttribute('x', '1');
     offRect.setAttribute('y', String(y));
     offRect.setAttribute('width', '28');
-    offRect.setAttribute('height', String(ledHeight));
-    offRect.setAttribute('rx', '2.2');
-    offRect.setAttribute('ry', '2.2');
+    offRect.setAttribute('height', String(LED_HEIGHT));
+    offRect.setAttribute('rx', '3.0');
+    offRect.setAttribute('ry', '3.0');
     offRect.setAttribute('fill', '#102028');
 
     offGroup.appendChild(
@@ -771,9 +776,9 @@ for (let b = 0; b < BANDS.length; b++)
     onRect.setAttribute('x', '1');
     onRect.setAttribute('y', String(y));
     onRect.setAttribute('width', '28');
-    onRect.setAttribute('height', String(ledHeight));
-    onRect.setAttribute('rx', '2.2');
-    onRect.setAttribute('ry', '2.2');
+    onRect.setAttribute('height', String(LED_HEIGHT));
+    onRect.setAttribute('rx', '3.0');
+    onRect.setAttribute('ry', '3.0');
     onRect.setAttribute('fill', onColor);
 
     onGroup.appendChild(
@@ -799,10 +804,10 @@ for (let b = 0; b < BANDS.length; b++)
     );
 
   peakRect.setAttribute('x', '1');
-  peakRect.setAttribute('y', '176');
+  peakRect.setAttribute('y', String(LED_VIEW_HEIGHT - LED_MARGIN - PEAK_LED_HEIGHT));
   peakRect.setAttribute('width', '28');
-  peakRect.setAttribute('height', '3');
-  peakRect.setAttribute('rx', '1.5');
+  peakRect.setAttribute('height', String(PEAK_LED_HEIGHT));
+  peakRect.setAttribute('rx', '2.0');
   peakRect.setAttribute('fill', '#e8ffff');
   peakRect.setAttribute('opacity', '0');
 
@@ -1164,14 +1169,14 @@ function analyze(now)
 
     // Clip desde abajo.
     const clipHeight =
-      180 *
+      LED_VIEW_HEIGHT *
       litNorm;
 
 
     clipRects[b].setAttribute(
       'y',
       String(
-        180 -
+        LED_VIEW_HEIGHT -
         clipHeight
       )
     );
@@ -1217,10 +1222,18 @@ function analyze(now)
       0.02
     )
     {
+      // Centramos el marcador blanco de media altura dentro del LED
+      // que representa el maximo retenido de la barra.
+      const peakLedIndex =
+        Math.max(0, Math.min(LED_COUNT - 1,
+          Math.ceil(peakShown[b] * LED_COUNT) - 1));
+
       const peakY =
-        176 -
-        peakShown[b] *
-        170;
+        LED_VIEW_HEIGHT -
+        LED_MARGIN -
+        LED_HEIGHT -
+        peakLedIndex * (LED_HEIGHT + LED_GAP) +
+        (LED_HEIGHT - PEAK_LED_HEIGHT) / 2;
 
 
       peakRects[b].setAttribute(
@@ -1228,8 +1241,8 @@ function analyze(now)
         String(
           clamp(
             peakY,
-            3,
-            176
+            LED_MARGIN,
+            LED_VIEW_HEIGHT - LED_MARGIN - PEAK_LED_HEIGHT
           )
         )
       );
