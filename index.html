@@ -56,9 +56,14 @@ body{
 }
 
 .title{
-  font-size:17px;
-  font-weight:850;
-  letter-spacing:.12em;
+  font-family:"Brush Script MT","Segoe Script","URW Chancery L","Apple Chancery",cursive;
+  font-size:clamp(31px,6vw,48px);
+  font-weight:500;
+  letter-spacing:.015em;
+  line-height:.82;
+  transform:rotate(-1deg);
+  transform-origin:left center;
+  text-shadow:0 1px 0 rgba(255,255,255,.10);
 }
 
 .subtitle{
@@ -383,14 +388,14 @@ button{
 
   <div class="header">
     <div>
-      <div class="title">LEVEL ANALYZER</div>
-      <div class="subtitle">MICROPHONE • FAST FFT • V4.4</div>
+      <div class="title">Spectrum Analyzer</div>
+      <div class="subtitle">MICROPHONE • FAST FFT • V4.5</div>
     </div>
 
     <div id="live" class="live">MIC • OFF</div>
   </div>
 
-  <div id="meter" class="meter"><div id="axis" class="axis"><span class="axisTitle">dB VIS</span></div></div>
+  <div id="meter" class="meter"></div>
 
   <div class="readout">
     <div id="levelText" class="level">— dBFS</div>
@@ -427,10 +432,10 @@ button{
 <div id="overlay" class="overlay">
   <div class="card">
     <h1>AutoPower VU Meter</h1>
-    <div class="versionBadge">VERSIÓN 4.4</div>
+    <div class="versionBadge">VERSIÓN 4.5</div>
 
     <p>
-      Vista horizontal optimizada · Pico blanco superior de caída lenta · LED con relieve.
+      Spectrum Analyzer clásico · Pico blanco ultrafino · LED con relieve reforzado.
       El micrófono funciona en el celular y no usa el ESP8266.
     </p>
 
@@ -497,7 +502,7 @@ let LED_COUNT = IS_LANDSCAPE() ? 9 : 12;
 // Cada LED mantiene base ancha, altura generosa y esquinas redondeadas.
 const LED_HEIGHT = 12;
 const LED_GAP = 3;
-const PEAK_LED_HEIGHT = 1.4;  // Línea blanca realmente fina, no medio LED.
+const PEAK_LED_HEIGHT = 0.7;  // Línea blanca realmente fina, no medio LED.
 let LED_VIEW_HEIGHT = 0;
 let LED_MARGIN = 0;
 
@@ -527,9 +532,9 @@ const RELEASE = 0.27;
 const PEAK_HOLD_MS = 260;
 
 // Velocidad de bajada INDEPENDIENTE de la de los LED: unidades de escala/s.
-// De 100% a 0% necesita unos 2.9 s una vez terminada la retención.
+// De 100% a 0% necesita unos 5 s una vez terminada la retención.
 // Usar tiempo real evita variaciones entre pantallas a 30 y 60 FPS.
-const PEAK_FALL_PER_SECOND = 0.35;
+const PEAK_FALL_PER_SECOND = 0.20;
 let lastPeakUpdateAt = 0;
 
 
@@ -709,26 +714,8 @@ function buildMeter()
 {
   setLedGeometry();
 
-  // Conservamos el contenedor del eje y eliminamos las barras anteriores.
-  meter.replaceChildren(axis);
-  axis.replaceChildren();
-
-  const title=document.createElement('span');
-  title.className='axisTitle';
-  title.textContent='dB VIS';
-  axis.appendChild(title);
-
-  // Escala -72, -60 ... 0 dB visuales. Igual en todas las bandas.
-  const usableHeight=LED_VIEW_HEIGHT-2*LED_MARGIN;
-  for(let db=SCALE_MAX_DB;db>=SCALE_MIN_DB;db-=12)
-  {
-    const tick=document.createElement('span');
-    tick.className='axisTick';
-    tick.textContent=db===0?'0':String(db);
-    const frac=(SCALE_MAX_DB-db)/(SCALE_MAX_DB-SCALE_MIN_DB);
-    tick.style.top=`${100*(LED_MARGIN+frac*usableHeight)/LED_VIEW_HEIGHT}%`;
-    axis.appendChild(tick);
-  }
+  // v4.5: sin eje vertical izquierdo; ganamos ancho útil para las barras.
+  meter.replaceChildren();
 
   clipRects.length=0;
   peakRects.length=0;
@@ -771,21 +758,22 @@ function buildMeter()
       // esquina suavizada y extremos que se afinan hasta desaparecer.
       // Sólo se dibuja al construir la barra: NO añade trabajo por frame.
       const brillo = document.createElementNS(SVG_NS, 'path');
+      // v4.5: reflejo más grueso y visible, manteniendo extremos afinados.
       brillo.setAttribute('d',
-        `M 3.7 ${y+8.1} ` +
-        `C 3.1 ${y+5.1} 3.6 ${y+3.1} 5.4 ${y+2.75} ` +
-        `C 7.3 ${y+2.35} 11.2 ${y+2.45} 15.3 ${y+2.9} ` +
-        `C 12.0 ${y+3.2} 8.1 ${y+3.05} 5.8 ${y+3.45} ` +
-        `C 4.6 ${y+3.68} 4.15 ${y+5.0} 3.7 ${y+8.1} Z`);
+        `M 3.55 ${y+9.0} ` +
+        `C 2.75 ${y+5.5} 3.15 ${y+2.55} 5.55 ${y+2.05} ` +
+        `C 8.0 ${y+1.55} 12.0 ${y+1.75} 16.6 ${y+2.55} ` +
+        `C 12.4 ${y+3.35} 8.4 ${y+3.05} 6.0 ${y+3.55} ` +
+        `C 4.65 ${y+3.85} 4.35 ${y+6.25} 3.55 ${y+9.0} Z`);
       brillo.setAttribute('fill', '#ffffff');
-      brillo.setAttribute('opacity', '0.42');
+      brillo.setAttribute('opacity', '0.62');
       onGroup.appendChild(brillo);
     }
 
     svg.appendChild(offGroup);
     svg.appendChild(onGroup);
 
-    // Línea blanca de pico: 1.4 unidades frente a LED de 12; se ubica arriba.
+    // Línea blanca de pico: 0.7 unidades frente a LED de 12; se ubica arriba.
     const peakRect=makeSvgRect(1,LED_VIEW_HEIGHT-LED_MARGIN-PEAK_LED_HEIGHT,
                                28,PEAK_LED_HEIGHT,'#e8ffff',0.7);
     peakRect.setAttribute('opacity','0');
