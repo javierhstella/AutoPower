@@ -57,13 +57,17 @@ body{
 
 .title{
   font-family:"Brush Script MT","Segoe Script","URW Chancery L","Apple Chancery",cursive;
-  font-size:clamp(31px,6vw,48px);
-  font-weight:500;
-  letter-spacing:.015em;
-  line-height:.82;
+  font-size:clamp(40px,7.8vw,62px);
+  font-weight:600;
+  letter-spacing:.01em;
+  line-height:.78;
   transform:rotate(-1deg);
   transform-origin:left center;
-  text-shadow:0 1px 0 rgba(255,255,255,.10);
+  color:#f1f6f8;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.14),
+    0 2px 10px rgba(255,255,255,.05),
+    0 0 18px rgba(0,229,255,.035);
 }
 
 .subtitle{
@@ -134,24 +138,22 @@ body{
 }
 
 .readout{
-  display:grid;
-  grid-template-columns:1fr auto;
+  display:flex;
+  justify-content:flex-end;
+  align-items:flex-end;
   gap:8px;
-  align-items:end;
-  margin:9px 3px 0;
+  margin:6px 3px 0;
+  min-height:0;
 }
 
 .level{
-  font-size:clamp(24px,7.5vw,44px);
-  font-weight:900;
-  letter-spacing:-.04em;
-  line-height:1;
+  display:none; /* v4.6: se elimina el campo grande "dB VIS" de la izquierda */
 }
 
 .meta{
   color:var(--muted);
   font-size:9px;
-  line-height:1.5;
+  line-height:1.45;
   text-align:right;
 }
 
@@ -337,7 +339,7 @@ button{
     padding: max(3px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(3px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));
   }
   .header{flex:0 0 auto;margin:0 3px 3px;align-items:center;}
-  .title{font-size:13px;line-height:1.1;}
+  .title{font-size:22px;line-height:.9;}
   .subtitle{font-size:8px;margin-top:1px;}
   .live{font-size:8px;padding:3px 7px;}
   .meter{
@@ -389,7 +391,7 @@ button{
   <div class="header">
     <div>
       <div class="title">Spectrum Analyzer</div>
-      <div class="subtitle">MICROPHONE • FAST FFT • V4.5</div>
+      <div class="subtitle">MICROPHONE • REAL TIME • V4.6</div>
     </div>
 
     <div id="live" class="live">MIC • OFF</div>
@@ -432,10 +434,10 @@ button{
 <div id="overlay" class="overlay">
   <div class="card">
     <h1>AutoPower VU Meter</h1>
-    <div class="versionBadge">VERSIÓN 4.5</div>
+    <div class="versionBadge">VERSIÓN 4.6</div>
 
     <p>
-      Spectrum Analyzer clásico · Pico blanco ultrafino · LED con relieve reforzado.
+      Spectrum Analyzer clásico · título reforzado · pico ultrafino centrado · relieve hi-fi.
       El micrófono funciona en el celular y no usa el ESP8266.
     </p>
 
@@ -502,7 +504,7 @@ let LED_COUNT = IS_LANDSCAPE() ? 9 : 12;
 // Cada LED mantiene base ancha, altura generosa y esquinas redondeadas.
 const LED_HEIGHT = 12;
 const LED_GAP = 3;
-const PEAK_LED_HEIGHT = 0.7;  // Línea blanca realmente fina, no medio LED.
+const PEAK_LED_HEIGHT = 0.45;  // v4.6: aún más sutil y elegante.
 let LED_VIEW_HEIGHT = 0;
 let LED_MARGIN = 0;
 
@@ -534,7 +536,7 @@ const PEAK_HOLD_MS = 260;
 // Velocidad de bajada INDEPENDIENTE de la de los LED: unidades de escala/s.
 // De 100% a 0% necesita unos 5 s una vez terminada la retención.
 // Usar tiempo real evita variaciones entre pantallas a 30 y 60 FPS.
-const PEAK_FALL_PER_SECOND = 0.20;
+const PEAK_FALL_PER_SECOND = 0.14;
 let lastPeakUpdateAt = 0;
 
 
@@ -758,24 +760,25 @@ function buildMeter()
       // esquina suavizada y extremos que se afinan hasta desaparecer.
       // Sólo se dibuja al construir la barra: NO añade trabajo por frame.
       const brillo = document.createElementNS(SVG_NS, 'path');
-      // v4.5: reflejo más grueso y visible, manteniendo extremos afinados.
+      // v4.6: relieve aún más marcado, pensado para verse "premium"
+      // incluso en pantallas pequeñas; mantiene extremos afinados.
       brillo.setAttribute('d',
-        `M 3.55 ${y+9.0} ` +
-        `C 2.75 ${y+5.5} 3.15 ${y+2.55} 5.55 ${y+2.05} ` +
-        `C 8.0 ${y+1.55} 12.0 ${y+1.75} 16.6 ${y+2.55} ` +
-        `C 12.4 ${y+3.35} 8.4 ${y+3.05} 6.0 ${y+3.55} ` +
-        `C 4.65 ${y+3.85} 4.35 ${y+6.25} 3.55 ${y+9.0} Z`);
+        `M 3.1 ${y+9.7} ` +
+        `C 2.1 ${y+5.4} 2.75 ${y+2.05} 5.85 ${y+1.45} ` +
+        `C 8.9 ${y+0.92} 13.2 ${y+1.12} 18.0 ${y+2.2} ` +
+        `C 13.7 ${y+3.35} 9.2 ${y+3.1} 6.25 ${y+3.72} ` +
+        `C 4.55 ${y+4.08} 4.0 ${y+6.95} 3.1 ${y+9.7} Z`);
       brillo.setAttribute('fill', '#ffffff');
-      brillo.setAttribute('opacity', '0.62');
+      brillo.setAttribute('opacity', '0.74');
       onGroup.appendChild(brillo);
     }
 
     svg.appendChild(offGroup);
     svg.appendChild(onGroup);
 
-    // Línea blanca de pico: 0.7 unidades frente a LED de 12; se ubica arriba.
-    const peakRect=makeSvgRect(1,LED_VIEW_HEIGHT-LED_MARGIN-PEAK_LED_HEIGHT,
-                               28,PEAK_LED_HEIGHT,'#e8ffff',0.7);
+    // Línea blanca de pico v4.6: más fina, 10% más corta y centrada sobre el LED.
+    const peakRect=makeSvgRect(2.4,LED_VIEW_HEIGHT-LED_MARGIN-PEAK_LED_HEIGHT,
+                               25.2,PEAK_LED_HEIGHT,'#f4ffff',0.45);
     peakRect.setAttribute('opacity','0');
     svg.appendChild(peakRect);
 
@@ -1215,7 +1218,7 @@ function analyze(now)
 
 
   levelText.textContent =
-    `${visualStrongest.toFixed(1)} dB VIS`;
+    `${visualStrongest.toFixed(1)} dB VIS`; // oculto visualmente en v4.6
 
 
   peakText.textContent =
