@@ -4,7 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#05080b">
-<title>AutoPower • Spectrum v4.4</title>
+<meta name="application-name" content="AutoPower Spectrum">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png">
+<title>AutoPower • Spectrum Analyzer v4.7</title>
 
 <style>
 :root{
@@ -147,7 +154,7 @@ body{
 }
 
 .level{
-  display:none; /* v4.6: se elimina el campo grande "dB VIS" de la izquierda */
+  display:none; /* v4.7: se elimina el campo grande "dB VIS" de la izquierda */
 }
 
 .meta{
@@ -381,6 +388,33 @@ button{
   font-size:12px;
   letter-spacing:.12em;
 }
+
+/* v4.7: botón discreto de pantalla completa para Chrome normal. */
+.headerActions{display:flex;align-items:center;gap:5px;flex:0 0 auto;}
+#fullBtn{
+  padding:0;
+  width:28px;
+  height:28px;
+  min-width:28px;
+  border:1px solid rgba(0,229,255,.26);
+  border-radius:9px;
+  background:#10232b;
+  color:#d3fbff;
+  font-family:system-ui,sans-serif;
+  font-size:17px;
+  line-height:1;
+  cursor:pointer;
+}
+@media(max-width:520px){
+  .header{gap:4px;}
+  .title{font-size:clamp(32px,8.7vw,43px);}
+  .headerActions{gap:3px;}
+  .live{font-size:8px;padding:4px 5px;}
+}
+@media(orientation:landscape) and (max-height:650px){
+  .title{font-size:clamp(23px,4.0vw,35px);}
+  #fullBtn{width:23px;height:23px;min-width:23px;border-radius:7px;font-size:14px;}
+}
 </style>
 </head>
 
@@ -391,10 +425,13 @@ button{
   <div class="header">
     <div>
       <div class="title">Spectrum Analyzer</div>
-      <div class="subtitle">MICROPHONE • REAL TIME • V4.6</div>
+      <div class="subtitle">MICROPHONE • REAL TIME • V4.7</div>
     </div>
 
-    <div id="live" class="live">MIC • OFF</div>
+    <div class="headerActions">
+      <div id="live" class="live">MIC • OFF</div>
+      <button id="fullBtn" type="button" aria-label="Pantalla completa" title="Pantalla completa">⛶</button>
+    </div>
   </div>
 
   <div id="meter" class="meter"></div>
@@ -434,7 +471,7 @@ button{
 <div id="overlay" class="overlay">
   <div class="card">
     <h1>AutoPower VU Meter</h1>
-    <div class="versionBadge">VERSIÓN 4.6</div>
+    <div class="versionBadge">VERSIÓN 4.7</div>
 
     <p>
       Spectrum Analyzer clásico · título reforzado · pico ultrafino centrado · relieve hi-fi.
@@ -450,7 +487,7 @@ button{
 
 <script>
 // ============================================================================
-// AUTOPOWER VU METER v4.4 - APASADO + ESCALA dB + VERSION VISIBLE
+// AUTOPOWER SPECTRUM ANALYZER v4.7 - PWA FULLSCREEN / ANDROID
 // ============================================================================
 //
 // CAMBIOS IMPORTANTES:
@@ -484,7 +521,7 @@ button{
 // ---------------------------------------------------------------------------
 
 const CONTROL_URL = 'http://192.168.1.13/control';
-const VU_VERSION = '4.4';
+const VU_VERSION = '4.7';
 
 const BANDS = [
   40, 63, 100, 160, 250, 400, 630,
@@ -504,7 +541,7 @@ let LED_COUNT = IS_LANDSCAPE() ? 9 : 12;
 // Cada LED mantiene base ancha, altura generosa y esquinas redondeadas.
 const LED_HEIGHT = 12;
 const LED_GAP = 3;
-const PEAK_LED_HEIGHT = 0.45;  // v4.6: aún más sutil y elegante.
+const PEAK_LED_HEIGHT = 0.45;  // v4.7: aún más sutil y elegante.
 let LED_VIEW_HEIGHT = 0;
 let LED_MARGIN = 0;
 
@@ -760,7 +797,7 @@ function buildMeter()
       // esquina suavizada y extremos que se afinan hasta desaparecer.
       // Sólo se dibuja al construir la barra: NO añade trabajo por frame.
       const brillo = document.createElementNS(SVG_NS, 'path');
-      // v4.6: relieve aún más marcado, pensado para verse "premium"
+      // v4.7: relieve aún más marcado, pensado para verse "premium"
       // incluso en pantallas pequeñas; mantiene extremos afinados.
       brillo.setAttribute('d',
         `M 3.1 ${y+9.7} ` +
@@ -776,7 +813,7 @@ function buildMeter()
     svg.appendChild(offGroup);
     svg.appendChild(onGroup);
 
-    // Línea blanca de pico v4.6: más fina, 10% más corta y centrada sobre el LED.
+    // Línea blanca de pico v4.7: más fina, 10% más corta y centrada sobre el LED.
     const peakRect=makeSvgRect(2.4,LED_VIEW_HEIGHT-LED_MARGIN-PEAK_LED_HEIGHT,
                                25.2,PEAK_LED_HEIGHT,'#f4ffff',0.45);
     peakRect.setAttribute('opacity','0');
@@ -1218,7 +1255,7 @@ function analyze(now)
 
 
   levelText.textContent =
-    `${visualStrongest.toFixed(1)} dB VIS`; // oculto visualmente en v4.6
+    `${visualStrongest.toFixed(1)} dB VIS`; // oculto visualmente en v4.7
 
 
   peakText.textContent =
@@ -1279,6 +1316,39 @@ function render(now)
   );
 }
 
+
+// ---------------------------------------------------------------------------
+// PWA v4.7 - App Android instalable + Fullscreen en el navegador.
+// ---------------------------------------------------------------------------
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', {scope:'./'})
+      .catch(err => console.warn('PWA SW:', err));
+  });
+}
+
+const fullBtn = document.getElementById('fullBtn');
+function refreshFullButton(){
+  const active = !!document.fullscreenElement;
+  fullBtn.textContent = active ? '⛶' : '⛶';
+  fullBtn.setAttribute('aria-label', active ? 'Salir de pantalla completa' : 'Pantalla completa');
+  fullBtn.title = active ? 'Salir de pantalla completa' : 'Pantalla completa';
+}
+fullBtn.addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else if (document.documentElement.requestFullscreen) {
+      await document.documentElement.requestFullscreen();
+    } else {
+      console.info('Pantalla completa no admitida: instalá la PWA desde Chrome.');
+    }
+  } catch (e) {
+    console.info('Chrome no habilitó pantalla completa:', e);
+  }
+  refreshFullButton();
+});
+document.addEventListener('fullscreenchange', refreshFullButton);
 
 // ---------------------------------------------------------------------------
 // EVENTOS
